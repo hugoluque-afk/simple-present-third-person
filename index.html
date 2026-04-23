@@ -1,835 +1,958 @@
 <!DOCTYPE html>
-<html lang="en" translate="no">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google" content="notranslate">
-    <title>Past Master - When vs While</title>
+    <title>Grammar Balloons - Learn English</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+        /* Animaciones base de los globos */
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-100px) scale(1.5); }
+        }
+        .animate-float-up {
+            animation: floatUp 1s ease-out forwards;
+        }
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-5px) rotate(2deg); }
+        }
+        .balloon-idle {
+            animation: gentleFloat 3s ease-in-out infinite;
+        }
         
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            overflow: hidden;
-            background-color: #0f172a; /* Fallback */
+        /* Animación de partículas de explosión */
+        @keyframes popParticle {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: popParticle 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            pointer-events: none;
+            z-index: 25;
         }
 
-        @keyframes fadeInUp {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
+        /* Animación de pulso del combo */
+        @keyframes comboPulse {
+            0% { transform: scale(1); text-shadow: 0 0 10px #fbbf24; }
+            50% { transform: scale(1.3); text-shadow: 0 0 30px #f59e0b; }
+            100% { transform: scale(1); text-shadow: 0 0 10px #fbbf24; }
         }
+        .combo-text {
+            animation: comboPulse 0.4s ease-out;
+        }
+
+        /* Animación de cuenta regresiva */
+        @keyframes popIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            60% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Animación del ecualizador de música */
+        @keyframes eq {
+            0% { height: 4px; }
+            100% { height: 20px; }
+        }
+        .eq-bar {
+            width: 5px;
+            background-color: #34d399; /* emerald-400 */
+            border-radius: 3px;
+            animation: eq 0.5s ease-in-out infinite alternate;
+        }
+        .eq-bar:nth-child(1) { animation-duration: 0.4s; }
+        .eq-bar:nth-child(2) { animation-duration: 0.7s; animation-delay: 0.1s; }
+        .eq-bar:nth-child(3) { animation-duration: 0.5s; animation-delay: 0.2s; }
+        .eq-bar:nth-child(4) { animation-duration: 0.6s; animation-delay: 0.3s; }
         
-        .animate-fade-in-up {
-            animation: fadeInUp 0.6s ease-out forwards;
+        .music-paused .eq-bar {
+            animation: none !important;
+            height: 4px !important;
+            background-color: #94a3b8; /* slate-400 */
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
-            50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); }
-        }
-
-        .animate-bounce-custom {
-            animation: bounce 1s infinite;
-        }
-
-        @keyframes pulse-heart {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-        }
-
-        .heart-active {
-            color: #ef4444;
-            fill: #ef4444;
-            animation: pulse-heart 1.5s infinite;
-        }
-
-        .heart-inactive {
-            color: #d1d5db;
-            fill: none;
-        }
-
-        /* Prevent text selection to feel more like an app */
-        .no-select {
-            -webkit-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+        /* Utilidad para ocultar elementos */
+        .hidden-state {
+            display: none !important;
         }
     </style>
 </head>
-<body class="no-select text-slate-800">
+<body class="font-sans antialiased overflow-hidden select-none bg-gray-900">
 
-    <!-- DECORATIVE BACKGROUNDS -->
-    <div id="bg-decorations" class="hidden">
-        <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-indigo-300/20 rounded-full blur-3xl pointer-events-none -z-10"></div>
-        <div class="fixed bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-pink-300/20 rounded-full blur-3xl pointer-events-none -z-10"></div>
-    </div>
+    <!-- Elemento de música de fondo -->
+    <audio id="bg-music" loop preload="auto">
+        <!-- Pista alegre de videojuego arcade -->
+        <source src="https://assets.mixkit.co/music/preview/mixkit-fun-video-game-background-2832.mp3" type="audio/mpeg">
+    </audio>
 
-    <!-- WELCOME SCREEN -->
-    <div id="welcome-screen" class="min-h-screen w-full bg-gradient-to-br from-indigo-900 via-purple-800 to-indigo-900 flex flex-col items-center justify-center p-6 text-white absolute inset-0 z-10 transition-opacity duration-300 overflow-y-auto">
+    <div id="game-wrapper" class="relative w-full h-screen max-h-screen transition-colors duration-1000 bg-gradient-to-b from-sky-500 to-indigo-600">
         
-        <div class="flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-8 w-full max-w-6xl z-10 my-auto">
-            
-            <!-- LEFT PANEL: Main Game Start -->
-            <div class="max-w-2xl w-full text-center space-y-8 p-8 md:p-10 bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 animate-fade-in-up flex flex-col justify-center">
-                <div class="inline-block p-4 bg-gradient-to-tr from-pink-500 to-orange-400 rounded-full shadow-lg mx-auto w-max">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+        <!-- --- INTERFAZ PRINCIPAL (HUD) --- -->
+        <div id="hud" class="hidden-state absolute top-0 left-0 w-full p-4 flex justify-between items-start z-30 text-white drop-shadow-md">
+            <!-- Izquierda: Nivel, Controles y Dificultad -->
+            <div class="flex flex-col gap-2">
+                <div class="flex items-center gap-4 bg-white/10 px-5 py-2 rounded-full border border-white/20 backdrop-blur-md shadow-lg">
+                    <button id="btn-pause-play" class="hover:scale-110 transition-transform cursor-pointer text-yellow-300">
+                        <!-- SVG inyectado por JS -->
+                    </button>
+                    <!-- Control de música en el juego (Ecualizador) -->
+                    <button id="btn-music-hud" onclick="toggleBgm()" class="flex items-center gap-[2px] h-6 cursor-pointer hover:opacity-80 transition-opacity pl-4 border-l border-white/30" title="Toggle Music">
+                        <div id="hud-eq" class="flex items-end gap-[3px] h-5">
+                            <div class="eq-bar"></div>
+                            <div class="eq-bar"></div>
+                            <div class="eq-bar"></div>
+                            <div class="eq-bar"></div>
+                        </div>
+                    </button>
+                    <div class="font-bold text-lg uppercase tracking-wider pl-4 border-l border-white/30">Level <span id="hud-level" class="text-2xl text-yellow-300 ml-1">1</span></div>
                 </div>
-                <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 drop-shadow-sm">
-                    Past Master
+                <div id="hud-diff" class="text-xs font-bold uppercase tracking-widest text-center opacity-90 bg-black/40 rounded-full py-1.5 shadow-inner border border-white/10">Normal</div>
+            </div>
+            
+            <!-- Centro: Temporizador -->
+            <div class="flex flex-col items-center bg-white/10 border border-white/20 px-8 py-2 rounded-3xl backdrop-blur-md shadow-lg mt-1">
+                <div class="text-xs font-bold opacity-80 uppercase tracking-widest text-blue-100">Time</div>
+                <div id="hud-time" class="text-4xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] tracking-tight">00:30</div>
+            </div>
+
+            <!-- Derecha: Puntaje y Vidas -->
+            <div class="flex items-center gap-6 bg-white/10 border border-white/20 px-5 py-2 rounded-full backdrop-blur-md shadow-lg">
+                <div class="flex flex-col items-center min-w-[80px]">
+                    <div class="text-xs font-bold opacity-80 uppercase text-green-200 tracking-widest">Score</div>
+                    <div id="hud-score" class="font-black text-2xl tracking-tight">0</div>
+                    <div id="hud-combo" class="text-xs font-bold text-yellow-400 h-4 transition-all"></div>
+                </div>
+                <div id="hud-lives" class="flex gap-1 border-l border-white/30 pl-4">
+                    <!-- Corazones inyectados por JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- --- LIENZO DEL JUEGO --- -->
+        <div id="game-canvas" class="hidden-state absolute inset-0 z-10">
+            <div id="balloons-container" class="absolute inset-0"></div>
+            <div id="particles-container" class="absolute inset-0 pointer-events-none"></div>
+            <div id="floating-texts-container" class="absolute inset-0 pointer-events-none"></div>
+
+            <!-- Tablero del Sujeto -->
+            <div class="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-20">
+                <div class="text-white/90 font-bold mb-3 uppercase tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-sm bg-black/40 px-5 py-1.5 rounded-full border border-white/10 backdrop-blur-sm">
+                    Select the correct verb
+                </div>
+                <div class="bg-[#2A1B0E] border-[4px] border-[#4A311A] rounded-2xl py-5 px-20 shadow-[0_15px_35px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+                   <div class="absolute inset-0 opacity-20 pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiAvPgo8cGF0aCBkPSJNMCAwTDggOFpNOCAwTDAgOFoiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxIiAvPjwvc3ZnPg==')] mix-blend-overlay"></div>
+                   <span id="current-subject" class="text-5xl md:text-6xl text-white font-black tracking-wide drop-shadow-[0_4px_6px_rgba(0,0,0,0.8)] relative z-10 transition-all">Ready...</span>
+                </div>
+                <div class="flex gap-40 -mt-2 -z-10 opacity-90">
+                  <div class="w-6 h-32 bg-gradient-to-b from-[#3E2105] to-[#1A0E02] shadow-2xl rounded-b-sm border-x border-black/30"></div>
+                  <div class="w-6 h-32 bg-gradient-to-b from-[#3E2105] to-[#1A0E02] shadow-2xl rounded-b-sm border-x border-black/30"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- --- MENÚS (Superposiciones) --- -->
+        
+        <!-- Menú Principal -->
+        <div id="menu-overlay" class="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 flex flex-col items-center justify-center z-50">
+            <!-- Elementos decorativos de fondo -->
+            <div class="absolute top-20 left-20 w-32 h-40 bg-pink-600/20 rounded-t-full rounded-b-[45%] animate-bounce blur-sm"></div>
+            <div class="absolute bottom-32 right-32 w-40 h-52 bg-blue-600/20 rounded-t-full rounded-b-[45%] animate-pulse blur-sm"></div>
+            <div class="absolute top-40 right-40 w-24 h-32 bg-yellow-500/10 rounded-t-full rounded-b-[45%] animate-pulse blur-sm" style="animation-delay: 1s;"></div>
+
+            <div class="bg-white/10 p-12 md:p-16 rounded-[2.5rem] backdrop-blur-xl border border-white/20 text-center shadow-[0_20px_60px_rgba(0,0,0,0.5)] flex flex-col items-center relative z-10 w-11/12 max-w-2xl">
+                <div class="flex gap-3 mb-8">
+                   <div class="w-10 h-14 bg-rose-500 rounded-t-full rounded-b-[45%] shadow-[inset_-4px_-4px_10px_rgba(0,0,0,0.3)] opacity-90"></div>
+                   <div class="w-12 h-16 bg-blue-500 rounded-t-full rounded-b-[45%] -mt-4 shadow-[inset_-4px_-4px_10px_rgba(0,0,0,0.3)]"></div>
+                   <div class="w-10 h-14 bg-emerald-500 rounded-t-full rounded-b-[45%] shadow-[inset_-4px_-4px_10px_rgba(0,0,0,0.3)] opacity-90"></div>
+                </div>
+                <h1 class="text-5xl md:text-7xl font-black text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] mb-3 leading-tight tracking-tight">
+                    Grammar<br><span class="text-yellow-400 bg-clip-text">Balloons</span>
                 </h1>
-                <h2 class="text-2xl md:text-3xl font-semibold text-indigo-200">
-                    When vs. While
-                </h2>
-                <p class="text-lg text-gray-300 max-w-md mx-auto hidden md:block">
-                    Master the Simple Past and Past Continuous. Over 100+ unique exercises!
+                <p class="text-lg md:text-xl text-indigo-100 font-semibold mb-10 drop-shadow-md bg-black/30 px-6 py-2 rounded-full border border-white/10 uppercase tracking-widest">
+                    Simple Present (3rd Person)
                 </p>
-
-                <div class="max-w-sm mx-auto w-full mt-4 mb-4 relative">
-                    <input type="text" id="player-name" placeholder="Enter your name to start..." class="w-full px-6 py-4 rounded-full text-slate-800 font-bold text-xl text-center focus:outline-none focus:ring-4 focus:ring-pink-500 shadow-inner" maxlength="20">
-                    <p id="name-error" class="hidden text-red-300 font-semibold mt-2 drop-shadow-md">Please enter your name!</p>
+                
+                <div class="mb-12 w-full">
+                    <p class="text-white/80 font-semibold mb-4 uppercase tracking-widest text-sm">Select Difficulty</p>
+                    <div class="flex flex-col md:flex-row gap-4 justify-center w-full">
+                        <button onclick="setDifficulty(1)" id="diff-btn-1" class="diff-btn flex-1 bg-emerald-600 text-white px-5 py-4 rounded-xl font-bold shadow-[0_4px_0_#064e3b] transition-all transform hover:-translate-y-1"> Beginner </button>
+                        <button onclick="setDifficulty(2)" id="diff-btn-2" class="diff-btn flex-1 bg-slate-600 opacity-70 text-white px-5 py-4 rounded-xl font-bold transition-all transform hover:-translate-y-1"> Normal </button>
+                        <button onclick="setDifficulty(3)" id="diff-btn-3" class="diff-btn flex-1 bg-slate-600 opacity-70 text-white px-5 py-4 rounded-xl font-bold transition-all transform hover:-translate-y-1"> Advanced </button>
+                    </div>
                 </div>
-
-                <button onclick="startGame()" class="group relative px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full font-bold text-xl md:text-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 active:scale-95 flex items-center justify-center mx-auto space-x-3 overflow-hidden">
-                    <span class="absolute inset-0 w-full h-full bg-white/20 group-hover:animate-pulse"></span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    <span>Start Learning</span>
+                
+                <button onclick="startGame()" class="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-yellow-900 font-black text-3xl py-5 px-20 rounded-full shadow-[0_8px_0_#9a6324,0_15px_20px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_0_#9a6324,0_10px_10px_rgba(0,0,0,0.4)] active:shadow-none active:translate-y-2 transition-all mb-8 flex items-center gap-4 group">
+                    <svg class="group-hover:animate-ping absolute opacity-0 group-hover:opacity-30" width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="relative z-10"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    PLAY
+                </button>
+                
+                <button onclick="openSettings()" class="text-white/70 hover:text-white font-medium flex items-center gap-2 text-sm bg-white/5 px-6 py-3 rounded-full hover:bg-white/10 transition-colors border border-white/5">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    Settings
                 </button>
             </div>
 
-            <!-- RIGHT PANEL: Mini Leaderboard -->
-            <div class="w-full lg:w-80 bg-black/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/10 animate-fade-in-up p-6 flex flex-col relative overflow-hidden" style="animation-delay: 0.1s;">
-                <div class="absolute top-0 right-0 p-16 bg-amber-500/10 blur-3xl rounded-full pointer-events-none"></div>
-                
-                <h3 class="text-amber-400 font-black text-2xl mb-6 flex items-center justify-center space-x-2 border-b border-white/10 pb-4 relative z-10">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
-                    <span>Top 3 Masters</span>
-                </h3>
-                
-                <div id="mini-leaderboard-list" class="space-y-3 text-sm flex-1 relative z-10">
-                    <p class="text-gray-400 text-center mt-8">Loading top players...</p>
-                </div>
-                
-                <button onclick="showLeaderboard('welcome-screen')" class="mt-6 w-full py-4 bg-indigo-600/30 hover:bg-indigo-600/50 rounded-2xl text-indigo-200 hover:text-white text-sm md:text-base font-bold transition-all border border-indigo-400/30 relative z-10 shadow-lg">
-                    View Full Global Leaderboard
-                </button>
+            <!-- Créditos (Desarrollado por Hugo Luque) -->
+            <div class="absolute bottom-6 text-white/50 text-sm font-semibold tracking-wider uppercase">
+                Developed by Hugo Luque
             </div>
-
         </div>
-        
-        <!-- FOOTER -->
-        <div class="mt-6 lg:absolute lg:bottom-4 text-center w-full text-white/50 text-sm font-medium tracking-wide">
-            Developed by: Hugo Luque
-        </div>
-    </div>
 
-    <!-- COUNTDOWN SCREEN -->
-    <div id="countdown-screen" class="hidden min-h-screen w-full bg-slate-900 flex items-center justify-center text-white absolute inset-0 z-20">
-        <div class="text-center">
-            <h1 id="countdown-text" class="text-9xl md:text-[12rem] font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 animate-bounce-custom drop-shadow-[0_0_30px_rgba(74,222,128,0.5)]">
+        <!-- Superposición de cuenta regresiva -->
+        <div id="countdown-overlay" class="hidden-state absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-40">
+            <div id="countdown-text" class="text-9xl md:text-[12rem] font-black drop-shadow-[0_0_30px_rgba(250,204,21,0.8)]">
                 3
-            </h1>
-        </div>
-    </div>
-
-    <!-- PLAYING SCREEN -->
-    <div id="playing-screen" class="hidden min-h-screen w-full bg-slate-50 flex flex-col absolute inset-0 z-10 overflow-y-auto">
-        
-        <!-- Header -->
-        <header class="w-full bg-white shadow-sm p-4 flex justify-between items-center z-10 sticky top-0">
-            <div class="flex items-center space-x-2">
-                <div id="level-display" class="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full font-black text-lg shadow-inner">
-                    Level 1
-                </div>
             </div>
-
-            <button onclick="stopGame()" class="text-gray-400 hover:text-red-500 transition-colors p-2" title="Stop Game">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-            </button>
-
-            <div class="flex items-center space-x-6">
-                <div id="hearts-container" class="flex items-center space-x-1">
-                    <!-- Hearts generated by JS -->
-                </div>
-                <div class="text-2xl font-black text-slate-700">
-                    <span id="score-display">0</span> <span class="text-sm font-medium text-slate-500">PTS</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- Timer Bar -->
-        <div class="w-full bg-slate-200 h-2 z-10 relative">
-            <div id="timer-bar" class="bg-gradient-to-r from-green-400 to-emerald-500 h-2 transition-all duration-100 ease-linear" style="width: 100%"></div>
-        </div>
-        <div class="w-full text-center absolute top-20 z-10 pointer-events-none">
-            <span id="timer-text" class="text-xl font-black text-slate-400 drop-shadow-sm hidden">15s</span>
         </div>
 
-        <!-- Main Game Area -->
-        <main class="flex-1 flex flex-col items-center justify-center p-4 w-full max-w-4xl mx-auto relative z-0">
-            
-            <!-- Feedback Overlay -->
-            <div id="feedback-overlay" class="hidden absolute inset-0 z-20 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-3xl transition-opacity duration-200">
-                <h2 id="feedback-text" class="text-6xl md:text-8xl font-black drop-shadow-xl animate-bounce-custom text-center">
-                    Wow!
-                </h2>
+        <!-- Menú de Pausa -->
+        <div id="paused-overlay" class="hidden-state absolute inset-0 bg-slate-900/80 backdrop-blur-xl flex items-center justify-center z-50">
+            <div class="bg-white/10 border border-white/20 p-12 rounded-[2rem] text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] min-w-[380px]">
+                <h2 class="text-4xl font-black text-white mb-10 uppercase tracking-widest drop-shadow-md">Paused</h2>
+                <div class="flex flex-col gap-4">
+                    <button onclick="setGameState('countdown_resume')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-[0_4px_0_#064e3b] active:shadow-none active:translate-y-1 transition-all flex justify-center items-center gap-3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Resume
+                    </button>
+                    <button onclick="startGame()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-[0_4px_0_#312e81] active:shadow-none active:translate-y-1 transition-all flex justify-center items-center gap-3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Restart Level
+                    </button>
+                    <button onclick="openSettings()" class="bg-white/10 hover:bg-white/20 text-white font-bold text-xl py-4 px-8 rounded-xl border border-white/10 transition-all flex justify-center items-center gap-3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Settings
+                    </button>
+                    <button onclick="setGameState('menu')" class="text-white/50 hover:text-rose-400 font-semibold mt-6 flex justify-center items-center gap-2 transition-colors">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Exit to Menu
+                    </button>
+                </div>
             </div>
+        </div>
 
-            <!-- Question Card -->
-            <div id="question-card" class="w-full bg-white rounded-3xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.07)] border border-slate-100 p-6 md:p-10 flex flex-col relative overflow-hidden hidden">
+        <!-- Menú de Ajustes -->
+        <div id="settings-overlay" class="hidden-state absolute inset-0 bg-slate-900/90 backdrop-blur-xl flex items-center justify-center z-50">
+            <div class="bg-slate-800 border border-slate-700 p-10 rounded-[2rem] text-center shadow-2xl min-w-[380px] relative">
+                <button onclick="closeSettings()" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <h2 class="text-3xl font-black text-white mb-10 tracking-wide">Settings</h2>
                 
-                <div class="flex items-start justify-between mb-8 md:mb-12">
-                    <h2 id="question-text" class="text-3xl md:text-5xl font-bold leading-tight text-slate-800 flex-1">
-                        <!-- Question injected by JS -->
-                    </h2>
-                    <button onclick="playCurrentAudio()" class="ml-4 p-4 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 hover:scale-110 transition-all shadow-sm active:scale-95 flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-                    </button>
-                </div>
+                <div class="flex flex-col gap-6">
+                    <div class="flex justify-between items-center bg-slate-700/50 p-5 rounded-xl border border-slate-600">
+                        <span class="text-lg font-semibold text-white flex items-center gap-3">
+                            <span id="icon-music"></span> Music
+                        </span>
+                        <button id="toggle-music" onclick="toggleBgm()" class="w-16 h-8 rounded-full relative transition-colors bg-emerald-500">
+                            <div id="toggle-music-knob" class="w-6 h-6 bg-white rounded-full absolute top-1 transition-transform translate-x-9 shadow-sm"></div>
+                        </button>
+                    </div>
 
-                <!-- Options -->
-                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
-                    <!-- Buttons injected by JS -->
-                </div>
-
-                <!-- Hint Section -->
-                <div class="mt-8 flex flex-col items-center border-t border-slate-100 pt-6 min-h-[80px]">
-                    <button id="show-hint-btn" onclick="showHint()" class="flex items-center space-x-2 text-amber-500 hover:text-amber-600 font-medium px-4 py-2 rounded-full hover:bg-amber-50 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"></path><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line></svg>
-                        <span>Show Hint</span>
-                    </button>
-                    
-                    <div id="hint-content" class="hidden bg-amber-50 text-amber-800 p-4 rounded-xl flex items-start space-x-3 w-full max-w-2xl animate-fade-in-up">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 mt-1 text-amber-500"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"></path><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line></svg>
-                        <p id="hint-text" class="text-lg"></p>
+                    <div class="flex justify-between items-center bg-slate-700/50 p-5 rounded-xl border border-slate-600">
+                        <span class="text-lg font-semibold text-white flex items-center gap-3">
+                            <span id="icon-sfx"></span> Sound Effects
+                        </span>
+                        <button id="toggle-sfx" onclick="toggleSfx()" class="w-16 h-8 rounded-full relative transition-colors bg-emerald-500">
+                            <div id="toggle-sfx-knob" class="w-6 h-6 bg-white rounded-full absolute top-1 transition-transform translate-x-9 shadow-sm"></div>
+                        </button>
                     </div>
                 </div>
 
-            </div>
-        </main>
-    </div>
-
-    <!-- GAMEOVER SCREEN -->
-    <div id="gameover-screen" class="hidden min-h-screen w-full bg-gradient-to-br from-red-900 via-gray-900 to-black flex items-center justify-center p-6 text-white absolute inset-0 z-30">
-        <div class="max-w-md w-full text-center space-y-6 p-8 bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-red-500/30 animate-fade-in-up">
-            <h1 class="text-5xl font-black text-red-500 drop-shadow-md">Game Over</h1>
-            <p class="text-2xl text-gray-300">Level Reached: <span id="final-level" class="font-bold text-white">1</span></p>
-            <p class="text-2xl text-gray-300">Final Score: <span id="final-score" class="font-bold text-white">0</span></p>
-            <p class="text-xl text-gray-400">Total Time Alive: <span id="final-time" class="font-bold text-white">0</span>s</p>
-            
-            <button onclick="showLeaderboard('gameover-screen')" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl font-bold text-xl shadow-lg hover:scale-105 transition-transform active:scale-95 flex items-center justify-center space-x-2 mt-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"></path><path d="M5 20V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14"></path><path d="M9 20V12h6v8"></path></svg>
-                <span>View Leaderboard</span>
-            </button>
-
-            <button onclick="startGame()" class="mt-4 w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl font-bold text-xl shadow-lg hover:scale-105 transition-transform active:scale-95 flex items-center justify-center space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                <span>Play Again</span>
-            </button>
-            <button onclick="stopGame()" class="w-full py-4 bg-gray-700/50 hover:bg-gray-700 rounded-2xl font-bold text-xl shadow-lg transition-colors flex items-center justify-center space-x-2">
-                <span>Main Menu</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- LEADERBOARD SCREEN -->
-    <div id="leaderboard-screen" class="hidden min-h-screen w-full bg-slate-900 flex flex-col items-center justify-center p-6 text-white absolute inset-0 z-40 overflow-y-auto">
-        <div class="max-w-2xl w-full space-y-6 p-8 bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 animate-fade-in-up mt-10 mb-10">
-            <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-500 drop-shadow-md text-center">Top 10 Leaderboard</h1>
-            
-            <div class="bg-black/30 rounded-2xl overflow-hidden mt-6">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-white/10 text-gray-300 text-sm md:text-base uppercase tracking-wider">
-                            <th class="p-4 border-b border-white/10">Rank</th>
-                            <th class="p-4 border-b border-white/10">Name</th>
-                            <th class="p-4 border-b border-white/10 text-center">Score</th>
-                            <th class="p-4 border-b border-white/10 text-right">Time (s)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboard-list" class="text-base md:text-lg">
-                        <!-- Filled by JS -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="flex justify-center mt-8">
-                <button id="lb-back-btn" onclick="switchScreen('welcome-screen')" class="w-full md:w-1/2 py-4 bg-gray-600 hover:bg-gray-500 rounded-2xl font-bold text-xl shadow-lg transition-colors flex items-center justify-center space-x-2">
-                    <span>Back</span>
+                <button onclick="closeSettings()" class="mt-10 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-4 px-16 rounded-xl shadow-[0_4px_0_#312e81] active:translate-y-1 active:shadow-none transition-all w-full">
+                    Accept
                 </button>
             </div>
         </div>
+
+        <!-- Transición de Nivel -->
+        <div id="transition-overlay" class="hidden-state absolute inset-0 bg-white/10 backdrop-blur-md flex flex-col items-center justify-center z-40">
+           <div class="bg-slate-900/80 p-12 rounded-3xl text-center border border-yellow-400/50 shadow-[0_0_50px_rgba(250,204,21,0.2)] backdrop-blur-xl">
+               <h2 class="text-4xl md:text-6xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mb-6 animate-pulse tracking-wide">
+                 LEVEL <span id="trans-level" class="text-yellow-400"></span> COMPLETED!
+               </h2>
+               <p id="trans-next-theme" class="text-xl md:text-2xl text-indigo-100 font-semibold drop-shadow-md bg-white/10 px-8 py-3 rounded-full inline-block border border-white/10">
+                 Get ready for the next one...
+               </p>
+           </div>
+        </div>
+
+        <!-- Fin del Juego -->
+        <div id="gameover-overlay" class="hidden-state absolute inset-0 bg-rose-950/90 backdrop-blur-xl flex items-center justify-center z-50">
+            <div class="bg-white/10 p-10 md:p-14 rounded-[2.5rem] text-center shadow-[0_0_80px_rgba(225,29,72,0.4)] border border-rose-500/30">
+                <h2 class="text-5xl font-black text-rose-500 mb-8 uppercase tracking-widest drop-shadow-md">Game Over</h2>
+                <div class="bg-black/30 rounded-2xl p-8 mb-10 border border-white/5">
+                    <p class="text-sm text-white/60 font-bold uppercase tracking-widest mb-2">Final Score</p>
+                    <p id="go-score" class="text-7xl font-black text-white drop-shadow-lg tracking-tighter">0</p>
+                    <p id="go-level" class="text-sm text-rose-200 font-semibold mt-6 bg-rose-900/50 py-2 px-4 rounded-full inline-block border border-rose-500/30">You reached Level 1</p>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-4">
+                    <button onclick="startGame()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-[0_4px_0_#064e3b] active:translate-y-1 active:shadow-none transition-all flex justify-center items-center gap-3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Play Again
+                    </button>
+                    <button onclick="setGameState('menu')" class="bg-white/10 hover:bg-white/20 text-white font-bold text-xl px-8 py-4 rounded-xl border border-white/10 transition-all flex justify-center items-center gap-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Menu
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- GLOBAL VARIABLES ---
-        let app, auth, db, currentUser;
-        let appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let playerName = "";
-        let score = 0;
-        let lives = 5;
-        let level = 1;
-        let currentQ = null;
-        let isProcessing = false;
-
-        let questionTimeLimit = 15;
-        let currentTimer = 15;
-        let timerInterval = null;
-        let totalTimeAlive = 0;
-        let questionStartTime = 0;
-
-        let leaderboardData = []; // Cache
-
-        // Load voices early
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.getVoices();
+    <!-- --- LÓGICA JAVASCRIPT --- -->
+    <script>
+        // --- FUNCIÓN DE PANTALLA COMPLETA ---
+        function enterFullScreen() {
+            const elem = document.documentElement; // Aplica a toda la página web
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => console.log("Fullscreen blocked:", err));
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                elem.msRequestFullscreen();
+            }
         }
 
-        // --- DATA ---
-        const CAs = [
-            { text: "I ___ TV", correct: "was watching", distractors: ["watched", "am watching", "watch"] },
-            { text: "she ___ a shower", correct: "was taking", distractors: ["took", "is taking", "takes"] },
-            { text: "they ___ soccer", correct: "were playing", distractors: ["played", "play", "are playing"] },
-            { text: "we ___ dinner", correct: "were having", distractors: ["had", "have", "are having"] },
-            { text: "he ___ a book", correct: "was reading", distractors: ["read", "reads", "is reading"] },
-            { text: "the dog ___", correct: "was sleeping", distractors: ["slept", "sleeps", "is sleeping"] },
-            { text: "I ___ to work", correct: "was driving", distractors: ["drove", "drive", "am driving"] },
-            { text: "we ___ for the exam", correct: "were studying", distractors: ["studied", "study", "are studying"] },
-            { text: "she ___ to music", correct: "was listening", distractors: ["listened", "listens", "is listening"] },
-            { text: "they ___ in the park", correct: "were walking", distractors: ["walked", "walk", "are walking"] },
-            { text: "he ___ the car", correct: "was fixing", distractors: ["fixed", "fixes", "is fixing"] },
-            { text: "I ___ for the bus", correct: "was waiting", distractors: ["waited", "wait", "am waiting"] },
-            { text: "the kids ___", correct: "were laughing", distractors: ["laughed", "laugh", "are laughing"] },
-            { text: "she ___ a letter", correct: "was writing", distractors: ["wrote", "writes", "is writing"] },
-            { text: "we ___ the house", correct: "were cleaning", distractors: ["cleaned", "clean", "are cleaning"] },
-            { text: "he ___ on the phone", correct: "was talking", distractors: ["talked", "talks", "is talking"] },
-            { text: "I ___ about my future", correct: "was thinking", distractors: ["thought", "think", "am thinking"] },
-            { text: "they ___ a movie", correct: "were making", distractors: ["made", "make", "are making"] },
-            { text: "she ___ a cake", correct: "was baking", distractors: ["baked", "bakes", "is baking"] },
-            { text: "we ___ along the beach", correct: "were running", distractors: ["ran", "run", "are running"] }
+        // --- ICONOS SVG ---
+        const ICONS = {
+            play: `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
+            pause: `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`,
+            heart: `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`,
+            volume2: `<svg class="text-emerald-400" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>`,
+            volumeX: `<svg class="text-slate-500" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="1" x2="1" y2="23"></line></svg>`
+        };
+
+        // --- DATOS DE GRAMÁTICA (Inglés) ---
+        const GRAMMAR_DATA = {
+            1: [
+                { s: "He", c: "plays", i: ["play", "playing", "played"] },
+                { s: "She", c: "runs", i: ["run", "running", "ran"] },
+                { s: "It", c: "sleeps", i: ["sleep", "sleeping", "slept"] },
+                { s: "The dog", c: "barks", i: ["bark", "barking", "barked"] },
+                { s: "My dad", c: "works", i: ["work", "working", "worked"] },
+                { s: "The cat", c: "jumps", i: ["jump", "jumping", "jumped"] },
+                { s: "He", c: "walks", i: ["walk", "walksing", "walked"] },
+                { s: "She", c: "talks", i: ["talk", "talksing", "talked"] },
+                { s: "It", c: "bites", i: ["bite", "biting", "bit"] },
+                { s: "The boy", c: "kicks", i: ["kick", "kicking", "kicked"] },
+                { s: "Dogs", c: "bark", i: ["barks", "barking", "barked"] },
+                { s: "Cats", c: "jump", i: ["jumps", "jumping", "jumped"] },
+                { s: "They", c: "play", i: ["plays", "playing", "played"] },
+                { s: "We", c: "run", i: ["runs", "running", "ran"] },
+                { s: "I", c: "work", i: ["works", "working", "worked"] }
+            ],
+            2: [
+                { s: "He", c: "watches", i: ["watch", "watchs", "watching"] },
+                { s: "She", c: "washes", i: ["wash", "washs", "washing"] },
+                { s: "It", c: "goes", i: ["go", "gos", "going"] },
+                { s: "He", c: "does", i: ["do", "dos", "doing"] },
+                { s: "The mechanic", c: "fixes", i: ["fix", "fixs", "fixing"] },
+                { s: "She", c: "kisses", i: ["kiss", "kisss", "kissing"] },
+                { s: "He", c: "catches", i: ["catch", "catchs", "catching"] },
+                { s: "The teacher", c: "teaches", i: ["teach", "teachs", "teaching"] },
+                { s: "She", c: "misses", i: ["miss", "misss", "missing"] },
+                { s: "He", c: "mixes", i: ["mix", "mixs", "mixing"] },
+                { s: "They", c: "watch", i: ["watches", "watchs", "watching"] },
+                { s: "We", c: "wash", i: ["washes", "washs", "washing"] },
+                { s: "You", c: "go", i: ["goes", "gos", "going"] },
+                { s: "I", c: "do", i: ["does", "dos", "doing"] }
+            ],
+            3: [
+                { s: "The bird", c: "flies", i: ["fly", "flys", "flying"] },
+                { s: "She", c: "cries", i: ["cry", "crys", "crying"] },
+                { s: "He", c: "studies", i: ["study", "studys", "studying"] },
+                { s: "She", c: "tries", i: ["try", "trys", "trying"] },
+                { s: "He", c: "carries", i: ["carry", "carrys", "carrying"] },
+                { s: "She", c: "marries", i: ["marry", "marrys", "marrying"] },
+                { s: "It", c: "dries", i: ["dry", "drys", "drying"] },
+                { s: "He", c: "has", i: ["have", "haves", "having"] },
+                { s: "She", c: "is", i: ["be", "am", "are"] },
+                { s: "John", c: "copies", i: ["copy", "copys", "copying"] },
+                { s: "They", c: "fly", i: ["flies", "flys", "flying"] },
+                { s: "We", c: "cry", i: ["cries", "crys", "crying"] },
+                { s: "You", c: "study", i: ["studies", "studys", "studying"] },
+                { s: "I", c: "have", i: ["has", "haves", "having"] },
+                { s: "You", c: "are", i: ["is", "am", "be"] }
+            ]
+        };
+
+        // --- TEMAS DE NIVELES ---
+        const LEVEL_THEMES = [
+            { bg: "from-sky-500 to-indigo-600", name: "Sunny Meadow" },
+            { bg: "from-amber-500 to-orange-700", name: "Sandy Desert" },
+            { bg: "from-violet-900 to-fuchsia-900", name: "Starry Space" },
+            { bg: "from-cyan-700 to-blue-900", name: "Deep Ocean" },
+            { bg: "from-rose-800 to-red-600", name: "Lava Volcano" },
+            { bg: "from-emerald-500 to-teal-800", name: "Magic Jungle" }
         ];
 
-        const IAs = [
-            { text: "the phone ___", correct: "rang", distractors: ["was ringing", "rings", "has rung"] },
-            { text: "the power ___ out", correct: "went", distractors: ["was going", "goes", "has gone"] },
-            { text: "it ___ to rain", correct: "started", distractors: ["was starting", "starts", "has started"] },
-            { text: "someone ___ on the door", correct: "knocked", distractors: ["was knocking", "knocks", "has knocked"] },
-            { text: "I ___ a strange noise", correct: "heard", distractors: ["was hearing", "hear", "has heard"] },
-            { text: "the alarm ___ off", correct: "went", distractors: ["was going", "goes", "has gone"] },
-            { text: "a bird ___ into the room", correct: "flew", distractors: ["was flying", "flies", "has flown"] },
-            { text: "she ___ her keys", correct: "dropped", distractors: ["was dropping", "drops", "has dropped"] },
-            { text: "the teacher ___ in", correct: "walked", distractors: ["was walking", "walks", "has walked"] },
-            { text: "I ___ a shooting star", correct: "saw", distractors: ["was seeing", "see", "has seen"] },
-            { text: "my friend ___ me", correct: "called", distractors: ["was calling", "calls", "has called"] },
-            { text: "the baby ___ up", correct: "woke", distractors: ["was waking", "wakes", "has woken"] },
-            { text: "a dog ___ loudly", correct: "barked", distractors: ["was barking", "barks", "has barked"] },
-            { text: "the computer ___", correct: "crashed", distractors: ["was crashing", "crashes", "has crashed"] },
-            { text: "we ___ a loud explosion", correct: "heard", distractors: ["were hearing", "hear", "have heard"] },
-            { text: "he ___ his finger", correct: "cut", distractors: ["was cutting", "cuts", "has cut"] },
-            { text: "the glass ___", correct: "broke", distractors: ["was breaking", "breaks", "has broken"] },
-            { text: "she ___ down", correct: "fell", distractors: ["was falling", "falls", "has fallen"] },
-            { text: "a car ___ outside", correct: "stopped", distractors: ["was stopping", "stops", "has stopped"] },
-            { text: "I ___ a brilliant idea", correct: "had", distractors: ["was having", "have", "has had"] }
+        // --- COLORES DE LOS GLOBOS ---
+        const BALLOON_COLORS = [
+            { class: 'bg-rose-500', hex: '#f43f5e' },
+            { class: 'bg-blue-500', hex: '#3b82f6' },
+            { class: 'bg-emerald-500', hex: '#10b981' },
+            { class: 'bg-amber-500', hex: '#f59e0b' },
+            { class: 'bg-violet-500', hex: '#8b5cf6' },
+            { class: 'bg-pink-500', hex: '#ec4899' }
         ];
 
-        const feedbackSuccess = ["Wow!", "Excellent!", "You are a genius!", "Good job!", "Wonderful!", "Amazing!", "Spectacular!", "Outstanding!", "Brilliant!"];
-        const feedbackFail = ["What a pity!", "Wrong!", "Try again!", "Oops!", "Not quite!", "Oh no!", "Keep trying!", "Time's up!"];
-
-        // --- CORE FUNCTIONS ---
-        function capitalize(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
-        function shuffleArray(array) { return array.sort(() => Math.random() - 0.5); }
-
-        function speak(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.9;
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        window.playCurrentAudio = function() {
-            if (!currentQ) return;
-            const textToRead = currentQ.questionText.replace("___", "blank");
-            speak(textToRead);
-        }
-
-        window.switchScreen = function(screenId) {
-            ['welcome-screen', 'countdown-screen', 'playing-screen', 'gameover-screen', 'leaderboard-screen'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-            });
-            document.getElementById(screenId).classList.remove('hidden');
-
-            if(screenId === 'playing-screen'){
-                document.getElementById('bg-decorations').classList.remove('hidden');
-            } else {
-                document.getElementById('bg-decorations').classList.add('hidden');
-            }
-        }
-
-        function requestFullScreen() {
-            const docElm = document.documentElement;
-            if (docElm.requestFullscreen) docElm.requestFullscreen().catch(err => console.log("Fullscreen error:", err));
-        }
-
-        function exitFullScreen() {
-            if (document.fullscreenElement) document.exitFullscreen().catch(err => console.log("Exit fullscreen error:", err));
-        }
-
-        // --- GAME LOGIC ---
-        function generateRandomQuestion() {
-            const ca = CAs[Math.floor(Math.random() * CAs.length)];
-            const ia = IAs[Math.floor(Math.random() * IAs.length)];
-            const patternType = Math.floor(Math.random() * 8);
-
-            const caFull = ca.text.replace("___", ca.correct);
-            const iaFull = ia.text.replace("___", ia.correct);
-            
-            let questionText = "", answer = "", distractors = [], hint = "";
-
-            switch (patternType) {
-                case 0: questionText = `${capitalize(caFull)} when ${ia.text}.`; answer = ia.correct; distractors = ia.distractors; hint = "We use the Simple Past after 'when' for a short action that interrupts."; break;
-                case 1: questionText = `${capitalize(ca.text)} when ${iaFull}.`; answer = ca.correct; distractors = ca.distractors; hint = "We use the Past Continuous for the longer background action that was in progress."; break;
-                case 2: questionText = `While ${ca.text}, ${iaFull}.`; answer = ca.correct; distractors = ca.distractors; hint = "We use the Past Continuous directly after 'while' for an ongoing action."; break;
-                case 3: questionText = `While ${caFull}, ${ia.text}.`; answer = ia.correct; distractors = ia.distractors; hint = "The action that interrupts the 'while' clause is usually in the Simple Past."; break;
-                case 4: questionText = `${capitalize(iaFull)} while ${ca.text}.`; answer = ca.correct; distractors = ca.distractors; hint = "We use the Past Continuous directly after 'while' for an ongoing action."; break;
-                case 5: questionText = `${capitalize(ia.text)} while ${caFull}.`; answer = ia.correct; distractors = ia.distractors; hint = "The shorter action that happens during the 'while' clause is in the Simple Past."; break;
-                case 6: questionText = `When ${ia.text}, ${caFull}.`; answer = ia.correct; distractors = ia.distractors; hint = "We use the Simple Past directly after 'when' for an interrupting event."; break;
-                case 7: questionText = `When ${iaFull}, ${ca.text}.`; answer = ca.correct; distractors = ca.distractors; hint = "The longer background action separated from 'when' is in the Past Continuous."; break;
-            }
-
-            const options = shuffleArray([answer, ...distractors]);
-            return { questionText, answer, options, hint };
-        }
-
-        window.startGame = function() {
-            playerName = document.getElementById('player-name').value.trim();
-            if (!playerName) {
-                document.getElementById('name-error').classList.remove('hidden');
-                return;
-            }
-            document.getElementById('name-error').classList.add('hidden');
-
-            if ('speechSynthesis' in window) {
-                const silent = new SpeechSynthesisUtterance('');
-                silent.volume = 0;
-                window.speechSynthesis.speak(silent);
-            }
-            
-            requestFullScreen();
-
-            score = 0;
-            lives = 5;
-            level = 1;
-            totalTimeAlive = 0;
-            updateUI();
-
-            window.switchScreen('countdown-screen');
-            let countdown = 3;
-            const textEl = document.getElementById('countdown-text');
-            textEl.innerText = countdown;
-            speak(countdown.toString());
-
-            const interval = setInterval(() => {
-                countdown--;
-                if (countdown > 0) {
-                    textEl.innerText = countdown;
-                    speak(countdown.toString());
-                } else if (countdown === 0) {
-                    textEl.innerText = "GO!";
-                    speak("Go!");
-                } else {
-                    clearInterval(interval);
-                    window.switchScreen('playing-screen');
-                    loadNewQuestion();
+        // --- SISTEMA DE AUDIO ---
+        const AudioSys = {
+            ctx: null,
+            bgmEl: null,
+            init: function() {
+                // Iniciar sintetizador para efectos de sonido
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 }
-            }, 1000);
-        }
-
-        window.stopGame = function() {
-            clearInterval(timerInterval);
-            exitFullScreen();
-            window.switchScreen('welcome-screen');
-            window.speechSynthesis.cancel();
-        }
-
-        function renderHearts() {
-            const container = document.getElementById('hearts-container');
-            container.innerHTML = '';
-            for(let i = 0; i < 5; i++) {
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('width', '28');
-                svg.setAttribute('height', '28');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('stroke', 'currentColor');
-                svg.setAttribute('stroke-width', '2');
-                svg.setAttribute('stroke-linecap', 'round');
-                svg.setAttribute('stroke-linejoin', 'round');
-                
-                if (i < lives) svg.setAttribute('class', 'heart-active');
-                else svg.setAttribute('class', 'heart-inactive');
-
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z');
-                svg.appendChild(path);
-                container.appendChild(svg);
-            }
-        }
-
-        function updateUI() {
-            level = Math.floor(score / 10) + 1;
-            document.getElementById('level-display').innerText = `Level ${level}`;
-            document.getElementById('score-display').innerText = score;
-            renderHearts();
-        }
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            questionTimeLimit = Math.max(5, 15 - (level - 1) * 1.5); // Gets faster each level
-            currentTimer = questionTimeLimit;
-            questionStartTime = Date.now();
-            
-            const timerBar = document.getElementById('timer-bar');
-            timerBar.style.width = '100%';
-            timerBar.className = 'bg-gradient-to-r from-green-400 to-emerald-500 h-2 transition-all duration-100 ease-linear';
-
-            timerInterval = setInterval(() => {
-                if (isProcessing) return;
-                
-                const elapsed = (Date.now() - questionStartTime) / 1000;
-                currentTimer = questionTimeLimit - elapsed;
-                
-                if (currentTimer <= 0) {
-                    currentTimer = 0;
-                    clearInterval(timerInterval);
-                    timerBar.style.width = '0%';
-                    handleTimeout();
-                } else {
-                    const percentage = (currentTimer / questionTimeLimit) * 100;
-                    timerBar.style.width = percentage + '%';
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+                // Obtener elemento de audio HTML5 para música de fondo
+                if (!this.bgmEl) {
+                    this.bgmEl = document.getElementById('bg-music');
+                    this.bgmEl.volume = 0.5; // Volumen al 50%
+                }
+            },
+            playTone: function(freq, type, duration, vol=0.1) {
+                if(!this.ctx || !sfxOn) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
                     
-                    if (percentage < 30) {
-                        timerBar.className = 'bg-gradient-to-r from-red-500 to-pink-600 h-2 transition-all duration-100 ease-linear';
-                    } else if (percentage < 60) {
-                        timerBar.className = 'bg-gradient-to-r from-amber-400 to-orange-500 h-2 transition-all duration-100 ease-linear';
-                    }
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            },
+            playPop: function() { this.playTone(800, 'sine', 0.15, 0.2); },
+            playError: function() { this.playTone(150, 'sawtooth', 0.4, 0.2); },
+            playCombo: function(comboCount) {
+                const freq = 400 + (comboCount * 100);
+                this.playTone(Math.min(freq, 1200), 'triangle', 0.2, 0.15);
+            },
+            playLevelUp: function() {
+                this.playTone(400, 'sine', 0.1, 0.15);
+                setTimeout(() => this.playTone(500, 'sine', 0.1, 0.15), 100);
+                setTimeout(() => this.playTone(600, 'sine', 0.1, 0.15), 200);
+                setTimeout(() => this.playTone(800, 'sine', 0.4, 0.2), 300);
+            },
+            startBGM: function() {
+                if(!this.bgmEl || !bgmOn) return;
+                if (this.bgmEl.paused) {
+                    this.bgmEl.play().catch(e => console.log("Audio playback blocked by browser:", e));
                 }
-            }, 50);
-        }
-
-        function stopAndRecordTime() {
-            clearInterval(timerInterval);
-            const elapsed = (Date.now() - questionStartTime) / 1000;
-            totalTimeAlive += Math.min(elapsed, questionTimeLimit);
-        }
-
-        function loadNewQuestion() {
-            currentQ = generateRandomQuestion();
-            isProcessing = false;
-            
-            const parts = currentQ.questionText.split('___');
-            const qContainer = document.getElementById('question-text');
-            qContainer.innerHTML = '';
-            
-            parts.forEach((part, index) => {
-                qContainer.appendChild(document.createTextNode(part));
-                if (index < parts.length - 1) {
-                    const span = document.createElement('span');
-                    span.className = 'inline-block mx-2 w-32 md:w-48 border-b-4 border-indigo-400 align-baseline';
-                    qContainer.appendChild(span);
+            },
+            stopBGM: function() {
+                if(this.bgmEl && !this.bgmEl.paused) {
+                    this.bgmEl.pause();
                 }
-            });
+            }
+        };
 
-            const optContainer = document.getElementById('options-container');
-            optContainer.innerHTML = '';
-            currentQ.options.forEach(option => {
-                const btn = document.createElement('button');
-                btn.className = 'w-full py-5 px-6 rounded-2xl text-xl md:text-2xl font-semibold transition-all duration-200 shadow-sm border-2 bg-white border-slate-200 text-slate-700 hover:border-indigo-400 hover:shadow-md hover:text-indigo-600 hover:scale-[1.02] active:scale-[0.98] cursor-pointer';
-                btn.innerText = option;
-                btn.onclick = () => window.handleAnswer(option, btn);
-                optContainer.appendChild(btn);
-            });
+        // --- ESTADO DEL JUEGO ---
+        let gameState = 'menu';
+        let score = 0;
+        let lives = 3;
+        let level = 1;
+        let timeLeft = 30;
+        let currentSubject = "Ready...";
+        let balloons = []; 
+        let balloonElements = {}; 
+        let combo = 0; 
+        
+        // Ajustes
+        let bgmOn = true;
+        let sfxOn = true;
+        let previousState = 'menu';
+        let selectedDifficulty = 1;
+        
+        const DIFF_SETTINGS = {
+            1: { name: "Beginner", time: 45, baseSpeed: 0.15, color: "bg-emerald-600", text: "text-emerald-400" },
+            2: { name: "Normal", time: 30, baseSpeed: 0.25, color: "bg-amber-500", text: "text-amber-400" },
+            3: { name: "Advanced", time: 20, baseSpeed: 0.40, color: "bg-rose-600", text: "text-rose-400" }
+        };
 
-            document.getElementById('show-hint-btn').classList.remove('hidden');
-            document.getElementById('hint-content').classList.add('hidden');
-            document.getElementById('hint-text').innerText = currentQ.hint;
-            document.getElementById('question-card').classList.remove('hidden');
+        let gameLoopInterval = null;
+        let timerInterval = null;
+        let transitionTimeout = null;
 
-            startTimer();
-
-            setTimeout(() => { window.playCurrentAudio(); }, 500);
-        }
-
-        window.showHint = function() {
-            document.getElementById('show-hint-btn').classList.add('hidden');
-            document.getElementById('hint-content').classList.remove('hidden');
-        }
-
-        window.handleAnswer = function(selectedOption, buttonElement) {
-            if (isProcessing) return;
-            isProcessing = true;
-            stopAndRecordTime();
-
-            const buttons = document.getElementById('options-container').querySelectorAll('button');
-            buttons.forEach(b => {
-                b.classList.add('opacity-50', 'cursor-not-allowed');
-                b.classList.remove('hover:scale-[1.02]', 'active:scale-[0.98]', 'cursor-pointer');
-            });
-
-            const isCorrect = selectedOption === currentQ.answer;
-            const overlay = document.getElementById('feedback-overlay');
-            const feedbackText = document.getElementById('feedback-text');
-
-            if (isCorrect) {
-                const msg = feedbackSuccess[Math.floor(Math.random() * feedbackSuccess.length)];
-                feedbackText.innerText = msg;
-                feedbackText.className = "text-6xl md:text-8xl font-black drop-shadow-xl animate-bounce-custom text-center text-green-500";
-                overlay.classList.remove('hidden');
-                speak(msg);
-                
-                score++;
-                updateUI();
-                
-                setTimeout(() => {
-                    overlay.classList.add('hidden');
-                    document.getElementById('question-card').classList.add('hidden');
-                    loadNewQuestion();
-                }, 2000);
-
-            } else {
-                const msg = feedbackFail[Math.floor(Math.random() * (feedbackFail.length - 1))]; // Exclude "Time's up!"
-                feedbackText.innerText = msg;
-                feedbackText.className = "text-6xl md:text-8xl font-black drop-shadow-xl animate-bounce-custom text-center text-red-500";
-                overlay.classList.remove('hidden');
-                speak(msg);
-                
-                lives--;
-                updateUI();
-                
-                setTimeout(() => {
-                    overlay.classList.add('hidden');
-                    if (lives <= 0) gameOver();
-                    else {
-                        document.getElementById('question-card').classList.add('hidden');
-                        loadNewQuestion();
-                    }
-                }, 2000);
+        function setDifficulty(levelIndex) {
+            selectedDifficulty = levelIndex;
+            for (let i = 1; i <= 3; i++) {
+                const btn = document.getElementById(`diff-btn-${i}`);
+                if (i === selectedDifficulty) {
+                    btn.className = `diff-btn flex-1 ${DIFF_SETTINGS[i].color} text-white px-5 py-4 rounded-xl font-bold shadow-[0_4px_0_rgba(0,0,0,0.4)] transition-all transform hover:-translate-y-1 scale-105`;
+                    btn.classList.remove('opacity-70');
+                } else {
+                    btn.className = `diff-btn flex-1 bg-slate-600 opacity-70 text-white px-5 py-4 rounded-xl font-bold transition-all transform hover:-translate-y-1 border border-white/5`;
+                }
             }
         }
 
-        function handleTimeout() {
-            if (isProcessing) return;
-            isProcessing = true;
-            stopAndRecordTime();
+        // --- ACTUALIZADOR DE INTERFAZ (UI) ---
+        function updateUI() {
+            const inGame = gameState === 'playing' || gameState === 'paused' || gameState === 'transition' || gameState === 'countdown' || gameState === 'countdown_resume';
             
-            const buttons = document.getElementById('options-container').querySelectorAll('button');
-            buttons.forEach(b => {
-                b.classList.add('opacity-50', 'cursor-not-allowed');
-                b.classList.remove('hover:scale-[1.02]', 'active:scale-[0.98]', 'cursor-pointer');
-            });
+            document.getElementById('hud').classList.toggle('hidden-state', !inGame);
+            document.getElementById('game-canvas').classList.toggle('hidden-state', !inGame);
+            document.getElementById('menu-overlay').classList.toggle('hidden-state', gameState !== 'menu');
+            document.getElementById('paused-overlay').classList.toggle('hidden-state', gameState !== 'paused');
+            document.getElementById('settings-overlay').classList.toggle('hidden-state', gameState !== 'settings');
+            document.getElementById('transition-overlay').classList.toggle('hidden-state', gameState !== 'transition');
+            document.getElementById('gameover-overlay').classList.toggle('hidden-state', gameState !== 'gameover');
+            
+            const isCountdown = gameState === 'countdown' || gameState === 'countdown_resume';
+            document.getElementById('countdown-overlay').classList.toggle('hidden-state', !isCountdown);
 
-            const msg = "Time's up!";
-            const overlay = document.getElementById('feedback-overlay');
-            const feedbackText = document.getElementById('feedback-text');
-            
-            feedbackText.innerText = msg;
-            feedbackText.className = "text-6xl md:text-8xl font-black drop-shadow-xl animate-bounce-custom text-center text-red-500";
-            overlay.classList.remove('hidden');
-            speak(msg);
-            
-            lives--;
-            updateUI();
-            
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-                if (lives <= 0) gameOver();
-                else {
-                    document.getElementById('question-card').classList.add('hidden');
-                    loadNewQuestion();
+            if (inGame) {
+                const currentTheme = LEVEL_THEMES[(level - 1) % LEVEL_THEMES.length];
+                document.getElementById('game-wrapper').className = `relative w-full h-screen max-h-screen transition-colors duration-1000 bg-gradient-to-b ${currentTheme.bg}`;
+
+                document.getElementById('hud-level').innerText = level;
+                document.getElementById('hud-score').innerText = score;
+                document.getElementById('current-subject').innerText = currentSubject;
+                
+                const diffLabel = document.getElementById('hud-diff');
+                diffLabel.innerText = DIFF_SETTINGS[selectedDifficulty].name;
+                diffLabel.className = `text-xs font-bold uppercase tracking-widest text-center px-3 py-1.5 rounded-full ${DIFF_SETTINGS[selectedDifficulty].text} bg-black/40 shadow-inner border border-white/10`;
+                
+                const comboEl = document.getElementById('hud-combo');
+                if (combo > 1) {
+                    comboEl.innerText = `Combo x${combo}!`;
+                    comboEl.classList.add('combo-text');
+                    setTimeout(() => comboEl.classList.remove('combo-text'), 400);
+                } else {
+                    comboEl.innerText = "";
                 }
-            }, 2000);
+
+                const timeStr = timeLeft.toString().padStart(2, '0');
+                const timeEl = document.getElementById('hud-time');
+                timeEl.innerText = `00:${timeStr}`;
+                if (timeLeft <= 5 && timeLeft > 0) {
+                    timeEl.className = 'text-4xl font-black text-rose-400 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-tight';
+                } else {
+                    timeEl.className = 'text-4xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] tracking-tight';
+                }
+
+                const livesContainer = document.getElementById('hud-lives');
+                livesContainer.innerHTML = '';
+                for (let i = 0; i < 3; i++) {
+                    const heart = document.createElement('div');
+                    heart.innerHTML = ICONS.heart;
+                    heart.className = i < lives ? 'text-rose-500 animate-pulse drop-shadow-md' : 'text-white/20';
+                    livesContainer.appendChild(heart);
+                }
+
+                const playPauseBtn = document.getElementById('btn-pause-play');
+                playPauseBtn.innerHTML = gameState === 'playing' ? ICONS.pause : ICONS.play;
+                
+                if (isCountdown) {
+                    playPauseBtn.onclick = null;
+                    playPauseBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    playPauseBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    playPauseBtn.onclick = () => setGameState(gameState === 'playing' ? 'paused' : 'playing');
+                }
+                
+                // Actualizar ecualizador visual
+                const hudEq = document.getElementById('hud-eq');
+                const activeStates = ['playing', 'countdown', 'countdown_resume', 'transition'];
+                if (bgmOn && activeStates.includes(gameState)) {
+                    hudEq.classList.remove('music-paused');
+                } else {
+                    hudEq.classList.add('music-paused');
+                }
+            }
+
+            // Interfaz de Ajustes
+            document.getElementById('icon-music').innerHTML = bgmOn ? ICONS.volume2 : ICONS.volumeX;
+            document.getElementById('icon-sfx').innerHTML = sfxOn ? ICONS.volume2.replace('emerald-400', 'fuchsia-400') : ICONS.volumeX;
+            
+            const btnMusic = document.getElementById('toggle-music');
+            btnMusic.className = `w-16 h-8 rounded-full relative transition-colors shadow-inner border border-black/20 ${bgmOn ? 'bg-emerald-500' : 'bg-slate-600'}`;
+            document.getElementById('toggle-music-knob').className = `w-6 h-6 bg-white rounded-full absolute top-1 transition-transform shadow-md ${bgmOn ? 'translate-x-9' : 'translate-x-1'}`;
+
+            const btnSfx = document.getElementById('toggle-sfx');
+            btnSfx.className = `w-16 h-8 rounded-full relative transition-colors shadow-inner border border-black/20 ${sfxOn ? 'bg-emerald-500' : 'bg-slate-600'}`;
+            document.getElementById('toggle-sfx-knob').className = `w-6 h-6 bg-white rounded-full absolute top-1 transition-transform shadow-md ${sfxOn ? 'translate-x-9' : 'translate-x-1'}`;
+
+            if (gameState === 'gameover') {
+                document.getElementById('go-score').innerText = score;
+                document.getElementById('go-level').innerText = `You reached Level ${level} (${DIFF_SETTINGS[selectedDifficulty].name})`;
+            }
+            if (gameState === 'transition') {
+                document.getElementById('trans-level').innerText = level;
+                document.getElementById('trans-next-theme').innerText = LEVEL_THEMES[level % LEVEL_THEMES.length].name;
+            }
+
+            manageAudio();
         }
 
-        async function gameOver() {
-            document.getElementById('final-score').innerText = score;
-            document.getElementById('final-level').innerText = level;
-            document.getElementById('final-time').innerText = totalTimeAlive.toFixed(1);
-            
-            window.switchScreen('gameover-screen');
-            speak("Game Over. You did your best!");
+        // --- LÓGICA DE MANEJO DE AUDIO ---
+        function manageAudio() {
+            const activeStates = ['playing', 'countdown', 'countdown_resume', 'transition'];
+            // Reproducir solo mientras se está en el flujo activo del juego
+            if (activeStates.includes(gameState) && bgmOn) {
+                AudioSys.startBGM();
+            } else {
+                AudioSys.stopBGM();
+            }
+        }
 
-            const newRecord = {
-                name: playerName,
-                score: score,
-                timeAlive: parseFloat(totalTimeAlive.toFixed(1)),
-                timestamp: Date.now()
+        // --- SISTEMA DE CUENTA REGRESIVA ---
+        function startCountdown(isResume = false) {
+            AudioSys.init();
+            setGameState(isResume ? 'countdown_resume' : 'countdown');
+            
+            let count = 3;
+            const textEl = document.getElementById('countdown-text');
+            
+            const animateText = (text, isGo = false) => {
+                textEl.innerText = text;
+                textEl.classList.remove('animate-pop-in');
+                void textEl.offsetWidth; 
+                
+                if(isGo) {
+                    textEl.className = "text-9xl md:text-[12rem] font-black text-emerald-400 drop-shadow-[0_0_40px_rgba(52,211,153,0.9)] animate-pop-in tracking-widest";
+                    if(sfxOn) AudioSys.playTone(800, 'sine', 0.4, 0.2); 
+                } else {
+                    textEl.className = "text-9xl md:text-[12rem] font-black text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)] animate-pop-in";
+                    if(sfxOn) AudioSys.playTone(400, 'sine', 0.1, 0.15); 
+                }
             };
 
-            if (currentUser && db) {
-                try {
-                    const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-                    await addDoc(lbRef, newRecord);
-                } catch (e) {
-                    console.error("Failed to save score", e);
-                    leaderboardData.push(newRecord);
-                }
-            } else {
-                leaderboardData.push(newRecord);
-            }
-            
-            // Actualizar mini leaderboard después de jugar
-            window.loadMiniLeaderboard();
-        }
-
-        window.loadMiniLeaderboard = async function() {
-            const miniList = document.getElementById('mini-leaderboard-list');
-            if (!miniList) return;
-            
-            let data = [];
-            if (currentUser && db) {
-                try {
-                    const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-                    const snapshot = await getDocs(lbRef);
-                    snapshot.forEach(doc => {
-                        data.push(doc.data());
-                    });
-                } catch (e) {
-                    console.error("Failed to fetch leaderboard", e);
-                    data = [...leaderboardData];
-                }
-            } else {
-                data = [...leaderboardData];
-            }
-
-            data.sort((a, b) => {
-                if (b.score !== a.score) return b.score - a.score;
-                return b.timeAlive - a.timeAlive;
-            });
-            
-            leaderboardData = data;
-            
-            const top3 = data.slice(0, 3);
-            miniList.innerHTML = '';
-            
-            if (top3.length === 0) {
-                miniList.innerHTML = '<p class="text-gray-400 text-center mt-4">No records yet! Be the first!</p>';
-                return;
-            }
-
-            top3.forEach((row, index) => {
-                const div = document.createElement('div');
-                div.className = 'flex justify-between items-center bg-white/5 px-4 py-3 rounded-xl border border-white/5';
-                
-                const isTop1 = index === 0 ? 'text-yellow-400 font-bold' : 'text-gray-200';
-                
-                div.innerHTML = `
-                    <div class="flex items-center space-x-3 truncate">
-                        <span class="${isTop1} text-lg">#${index + 1}</span>
-                        <span class="font-medium truncate max-w-[120px] text-left text-base">${row.name}</span>
-                    </div>
-                    <div class="flex flex-col items-end">
-                        <span class="text-indigo-300 font-bold text-sm">${row.score} pts</span>
-                        <span class="text-gray-400 text-xs">${row.timeAlive}s</span>
-                    </div>
-                `;
-                miniList.appendChild(div);
-            });
-        }
-
-        window.showLeaderboard = async function(returnScreen = 'welcome-screen') {
-            document.getElementById('lb-back-btn').onclick = () => window.switchScreen(returnScreen);
-            window.switchScreen('leaderboard-screen');
-            const listEl = document.getElementById('leaderboard-list');
-            listEl.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-400">Loading...</td></tr>';
-            
-            let data = [];
-            if (currentUser && db) {
-                try {
-                    const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-                    const snapshot = await getDocs(lbRef);
-                    snapshot.forEach(doc => {
-                        data.push(doc.data());
-                    });
-                } catch (e) {
-                    console.error("Failed to fetch leaderboard", e);
-                    data = [...leaderboardData];
-                }
-            } else {
-                data = [...leaderboardData];
-            }
-
-            // Sort: highest score, then highest time alive
-            data.sort((a, b) => {
-                if (b.score !== a.score) return b.score - a.score;
-                return b.timeAlive - a.timeAlive;
-            });
-            
-            leaderboardData = data;
-            
-            const top10 = data.slice(0, 10);
-            listEl.innerHTML = '';
-            
-            if (top10.length === 0) {
-                listEl.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-400">No records yet!</td></tr>';
-                return;
-            }
-
-            top10.forEach((row, index) => {
-                const tr = document.createElement('tr');
-                tr.className = 'border-b border-white/5 hover:bg-white/5 transition-colors';
-                
-                const isTop1 = index === 0 ? 'text-yellow-400 font-black text-2xl drop-shadow-md' : '';
-                const isTop2 = index === 1 ? 'text-gray-300 font-bold text-xl' : '';
-                const isTop3 = index === 2 ? 'text-amber-600 font-bold text-xl' : '';
-
-                tr.innerHTML = `
-                    <td class="p-4 ${isTop1 || isTop2 || isTop3}">#${index + 1}</td>
-                    <td class="p-4 font-bold truncate max-w-[120px] md:max-w-[200px]">${row.name}</td>
-                    <td class="p-4 text-center font-black text-indigo-300">${row.score}</td>
-                    <td class="p-4 text-right text-gray-400">${row.timeAlive}s</td>
-                `;
-                listEl.appendChild(tr);
-            });
-        }
-
-        // --- FIREBASE INIT (Moved to bottom to ensure all functions are loaded first) ---
-        try {
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-            if (Object.keys(firebaseConfig).length > 0) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                
-                const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
+            const tick = () => {
+                if (gameState !== 'countdown' && gameState !== 'countdown_resume') return; 
+                if (count > 0) {
+                    animateText(count.toString());
+                    count--;
+                    setTimeout(tick, 1000);
+                } else if (count === 0) {
+                    animateText('GO!', true);
+                    count--;
+                    setTimeout(tick, 1000);
+                } else {
+                    if (gameState === 'countdown_resume') {
+                        setGameState('playing');
                     } else {
-                        await signInAnonymously(auth);
+                        beginGameRound();
                     }
-                };
-                initAuth();
-
-                onAuthStateChanged(auth, user => {
-                    currentUser = user;
-                    window.loadMiniLeaderboard();
-                });
-            } else {
-                window.loadMiniLeaderboard();
-            }
-        } catch (e) {
-            console.warn("Firebase not initialized correctly. Leaderboard will run locally.", e);
-            window.loadMiniLeaderboard();
+                }
+            };
+            tick();
         }
 
-        // Initialize display
-        renderHearts();
+        // --- LÓGICA PRINCIPAL DEL JUEGO ---
+        function setGameState(newState) {
+            if(gameState === 'playing' && newState !== 'playing') stopLoops();
+            
+            if (gameState === 'paused' && newState === 'countdown_resume') {
+                gameState = newState;
+                updateUI();
+                startCountdown(true);
+                return;
+            }
+
+            gameState = newState;
+            if (gameState === 'playing') startLoops();
+            
+            updateUI();
+        }
+
+        function startGame() {
+            // Activar pantalla completa al primer clic en Jugar
+            enterFullScreen(); 
+
+            score = 0;
+            lives = 3;
+            level = 1;
+            combo = 0;
+            timeLeft = DIFF_SETTINGS[selectedDifficulty].time;
+            currentSubject = "Ready...";
+            
+            document.getElementById('particles-container').innerHTML = '';
+            document.getElementById('floating-texts-container').innerHTML = '';
+            document.getElementById('balloons-container').innerHTML = '';
+            
+            if (AudioSys.bgmEl) {
+                AudioSys.bgmEl.currentTime = 0;
+            }
+
+            startCountdown(false);
+        }
+
+        function beginGameRound() {
+            generateRound(level);
+            setGameState('playing');
+        }
+
+        function generateRound(currentLevel) {
+            const dataPool = GRAMMAR_DATA[selectedDifficulty];
+            const q = dataPool[Math.floor(Math.random() * dataPool.length)];
+            
+            const subjEl = document.getElementById('current-subject');
+            subjEl.style.transform = 'scale(0.8)';
+            subjEl.style.opacity = '0';
+            setTimeout(() => {
+                currentSubject = q.s;
+                subjEl.innerText = currentSubject;
+                subjEl.style.transform = 'scale(1)';
+                subjEl.style.opacity = '1';
+            }, 200);
+
+            const isCorrectIndex = Math.floor(Math.random() * 3);
+            const selectedIncorrect = [...q.i].sort(() => 0.5 - Math.random()).slice(0, 2);
+
+            balloons = [];
+            let incorrectCounter = 0;
+
+            const shuffledColors = [...BALLOON_COLORS].sort(() => 0.5 - Math.random());
+            const xPos = [15, 50, 85].sort(() => 0.5 - Math.random());
+            
+            const speedCalc = DIFF_SETTINGS[selectedDifficulty].baseSpeed + (currentLevel * 0.08) + (Math.random() * 0.1);
+
+            for (let i = 0; i < 3; i++) {
+                const isCorrect = i === isCorrectIndex;
+                balloons.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    verb: isCorrect ? q.c : selectedIncorrect[incorrectCounter++],
+                    isCorrect: isCorrect,
+                    x: xPos[i],
+                    y: -25 - Math.random() * 20, 
+                    speed: speedCalc,
+                    colorData: shuffledColors[i]
+                });
+            }
+            renderBalloons();
+            updateUI();
+        }
+
+        function renderBalloons() {
+            const container = document.getElementById('balloons-container');
+            container.innerHTML = '';
+            balloonElements = {};
+            
+            balloons.forEach(b => {
+                const el = document.createElement('div');
+                el.className = 'absolute flex flex-col items-center w-28 md:w-32 balloon-idle';
+                el.style.left = `calc(${b.x}% - 3.5rem)`;
+                el.style.top = `${b.y}%`;
+                
+                el.innerHTML = `
+                    <div class="w-24 h-32 md:w-28 md:h-36 ${b.colorData.class} rounded-t-full rounded-b-[45%] flex items-center justify-center shadow-[inset_-6px_-6px_15px_rgba(0,0,0,0.2),_0_10px_15px_rgba(0,0,0,0.3)] cursor-pointer transform hover:scale-105 active:scale-95 transition-all relative overflow-hidden group border border-white/20">
+                        <div class="absolute top-3 left-3 w-5 h-8 bg-white/30 rounded-full rotate-[30deg] pointer-events-none group-hover:bg-white/40 transition-colors"></div>
+                        <span class="text-white font-extrabold text-2xl md:text-3xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] z-10 pointer-events-none px-2 text-center w-full break-words leading-tight tracking-wide">${b.verb}</span>
+                    </div>
+                    <div class="w-4 h-4 ${b.colorData.class} mt-[-6px] rotate-45 z-0 pointer-events-none shadow-md border-b border-r border-black/10"></div>
+                    <div class="w-[2px] h-20 md:h-24 bg-white/40 -mt-1 pointer-events-none"></div>
+                `;
+                
+                el.children[0].onmousedown = (e) => { e.preventDefault(); handleBalloonClick(b.id); };
+                el.children[0].ontouchstart = (e) => { e.preventDefault(); handleBalloonClick(b.id); };
+                
+                container.appendChild(el);
+                balloonElements[b.id] = el;
+            });
+        }
+
+        function createParticles(x, y, hexColor) {
+            const container = document.getElementById('particles-container');
+            const numParticles = 12;
+            for(let i=0; i<numParticles; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.backgroundColor = hexColor;
+                p.style.left = `calc(${x}% - 5px)`;
+                p.style.top = `${y}%`;
+                p.style.width = `${Math.random() * 8 + 6}px`;
+                p.style.height = p.style.width;
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 60 + 40;
+                p.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                p.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                
+                container.appendChild(p);
+                setTimeout(() => p.remove(), 600);
+            }
+        }
+
+        function handleBalloonClick(id) {
+            if (gameState !== 'playing') return;
+            const balloon = balloons.find(b => b.id === id);
+            if (!balloon) return;
+
+            if (balloon.isCorrect) {
+                combo++;
+                if (sfxOn) {
+                    AudioSys.playPop();
+                    setTimeout(() => AudioSys.playCombo(combo), 100);
+                }
+                
+                const pointsEarned = 10 * combo;
+                score += pointsEarned;
+                
+                createParticles(balloon.x, balloon.y + 10, balloon.colorData.hex);
+                addFloatingText(balloon.x, balloon.y, `+${pointsEarned}`, 'text-emerald-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] text-4xl md:text-5xl');
+                
+                balloons = [];
+                renderBalloons(); 
+                updateUI();
+                
+                setTimeout(() => generateRound(level), 200);
+                
+            } else {
+                combo = 0; 
+                if (sfxOn) AudioSys.playError();
+                lives -= 1;
+                
+                addFloatingText(balloon.x, balloon.y, 'INCORRECT!', 'text-rose-500 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] text-2xl md:text-3xl tracking-widest');
+                
+                balloons = balloons.filter(b => b.id !== id);
+                if (balloonElements[id]) {
+                    const el = balloonElements[id];
+                    el.style.transition = 'transform 0.5s ease-in, opacity 0.3s';
+                    el.style.transform = 'translateY(500px) rotate(45deg)';
+                    el.style.opacity = '0';
+                    setTimeout(() => { if(el.parentNode) el.remove(); }, 500);
+                    delete balloonElements[id];
+                }
+
+                updateUI();
+                
+                if (lives <= 0) {
+                    setTimeout(() => setGameState('gameover'), 500);
+                }
+            }
+        }
+
+        function handleMissedCorrect() {
+            combo = 0; 
+            if (sfxOn) AudioSys.playError();
+            lives -= 1;
+            
+            balloons = [];
+            renderBalloons();
+            updateUI();
+            
+            if (lives <= 0) {
+                setGameState('gameover');
+            } else {
+                const subjEl = document.getElementById('current-subject');
+                subjEl.innerText = "It got away!";
+                subjEl.className = "text-3xl md:text-4xl text-rose-400 font-black tracking-widest drop-shadow-[0_4px_6px_rgba(0,0,0,0.8)] relative z-10 transition-all uppercase";
+                
+                setTimeout(() => {
+                    subjEl.className = "text-5xl md:text-6xl text-white font-black tracking-wide drop-shadow-[0_4px_6px_rgba(0,0,0,0.8)] relative z-10 transition-all";
+                    generateRound(level);
+                }, 1000);
+            }
+        }
+
+        function addFloatingText(x, y, text, colorClass) {
+            const container = document.getElementById('floating-texts-container');
+            const el = document.createElement('div');
+            el.className = `absolute font-black animate-float-up pointer-events-none z-40 text-center ${colorClass}`;
+            el.style.left = `calc(${x}% - 75px)`;
+            el.style.width = '150px';
+            el.style.top = `${y}%`;
+            el.innerText = text;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        // --- BUCLES DEL JUEGO ---
+        function startLoops() {
+            if (!gameLoopInterval) gameLoopInterval = setInterval(gameLoop, 16);
+            if (!timerInterval) timerInterval = setInterval(timerLoop, 1000);
+        }
+
+        function stopLoops() {
+            if (gameLoopInterval) clearInterval(gameLoopInterval);
+            if (timerInterval) clearInterval(timerInterval);
+            gameLoopInterval = null;
+            timerInterval = null;
+        }
+
+        function gameLoop() {
+            let missedCorrect = false;
+            balloons.forEach(b => {
+                b.y += b.speed;
+                if (b.y > 110) {
+                    if (b.isCorrect) missedCorrect = true;
+                } else {
+                    if (balloonElements[b.id]) balloonElements[b.id].style.top = `${b.y}%`;
+                }
+            });
+
+            if (missedCorrect) {
+                stopLoops();
+                handleMissedCorrect();
+                if (lives > 0) startLoops(); 
+            }
+        }
+
+        function timerLoop() {
+            timeLeft -= 1;
+            if (timeLeft <= 0) {
+                timeLeft = 0;
+                setGameState('transition');
+                handleTransition();
+            } else {
+                updateUI();
+            }
+        }
+
+        function handleTransition() {
+            if (sfxOn) AudioSys.playLevelUp();
+            updateUI(); 
+            
+            if (transitionTimeout) clearTimeout(transitionTimeout);
+            transitionTimeout = setTimeout(() => {
+                level += 1;
+                timeLeft = DIFF_SETTINGS[selectedDifficulty].time;
+                generateRound(level);
+                setGameState('playing');
+            }, 3000);
+        }
+
+        // --- CONTROLES DE AJUSTES ---
+        function openSettings() {
+            previousState = gameState;
+            setGameState('settings');
+        }
+
+        function closeSettings() {
+            setGameState(previousState === 'settings' ? 'menu' : previousState);
+        }
+
+        function toggleBgm() {
+            AudioSys.init();
+            bgmOn = !bgmOn;
+            updateUI();
+        }
+
+        function toggleSfx() {
+            AudioSys.init();
+            sfxOn = !sfxOn;
+            updateUI();
+        }
+
+        window.onload = () => {
+            setDifficulty(1); 
+            updateUI();
+        };
     </script>
 </body>
 </html>
